@@ -23,7 +23,7 @@ const (
 )
 
 // TRC20Call make cosntant calll
-func (g *GrpcClient) TRC20Call(from, contractAddress, data string, constant bool, feeLimit int64, amount int64) (*api.TransactionExtention, error) {
+func (g *GrpcClient) TRC20CallAmount(from, contractAddress, data string, constant bool, feeLimit int64, amount int64) (*api.TransactionExtention, error) {
 	var err error
 	fromDesc := address.HexToAddress("410000000000000000000000000000000000000000")
 	if len(from) > 0 {
@@ -47,6 +47,46 @@ func (g *GrpcClient) TRC20Call(from, contractAddress, data string, constant bool
 	}
 	if amount > 0 {
 		ct.CallValue = amount
+	}
+	result := &api.TransactionExtention{}
+	if constant {
+		result, err = g.triggerConstantContract(ct)
+
+	} else {
+		result, err = g.triggerContract(ct, feeLimit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result.Result.Code > 0 {
+		return result, fmt.Errorf(string(result.Result.Message))
+	}
+	return result, nil
+
+}
+
+// TRC20Call make cosntant calll
+func (g *GrpcClient) TRC20Call(from, contractAddress, data string, constant bool, feeLimit int64) (*api.TransactionExtention, error) {
+	var err error
+	fromDesc := address.HexToAddress("410000000000000000000000000000000000000000")
+	if len(from) > 0 {
+		fromDesc, err = address.Base58ToAddress(from)
+		if err != nil {
+			return nil, err
+		}
+	}
+	contractDesc, err := address.Base58ToAddress(contractAddress)
+	if err != nil {
+		return nil, err
+	}
+	dataBytes, err := common.FromHex(data)
+	if err != nil {
+		return nil, err
+	}
+	ct := &core.TriggerSmartContract{
+		OwnerAddress:    fromDesc.Bytes(),
+		ContractAddress: contractDesc.Bytes(),
+		Data:            dataBytes,
 	}
 	result := &api.TransactionExtention{}
 	if constant {
