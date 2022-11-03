@@ -23,7 +23,7 @@ const (
 )
 
 // TRC20Call make cosntant calll
-func (g *GrpcClient) TRC20Call(from, contractAddress, data string, constant bool, feeLimit int64) (*api.TransactionExtention, error) {
+func (g *GrpcClient) TRC20Call(from, contractAddress, data string, constant bool, feeLimit int64, amount int64) (*api.TransactionExtention, error) {
 	var err error
 	fromDesc := address.HexToAddress("410000000000000000000000000000000000000000")
 	if len(from) > 0 {
@@ -44,6 +44,9 @@ func (g *GrpcClient) TRC20Call(from, contractAddress, data string, constant bool
 		OwnerAddress:    fromDesc.Bytes(),
 		ContractAddress: contractDesc.Bytes(),
 		Data:            dataBytes,
+	}
+	if amount > 0 {
+		ct.CallValue = amount
 	}
 	result := &api.TransactionExtention{}
 	if constant {
